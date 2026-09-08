@@ -28,6 +28,7 @@ import {
   analyzeFinancialHealth,
   generateInsights,
   generateRecommendations,
+  askLiveAICopilot,
   answerFinancialQuestion
 } from '../services/aiEngine';
 
@@ -223,6 +224,13 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
 
+  const completeOnboarding = (profile: BusinessProfile, newMetrics: FinancialMetrics) => {
+    setBusinessProfile(profile);
+    setMetrics(newMetrics);
+    setIsOnboardingOpen(false);
+    localStorage.setItem('finpass_onboarded', 'true');
+  };
+
   return (
     <FinanceContext.Provider
       value={{
@@ -252,6 +260,9 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setIsVoiceModalOpen,
         isBusinessModalOpen,
         setIsBusinessModalOpen,
+        isOnboardingOpen,
+        setIsOnboardingOpen,
+        completeOnboarding,
         tourStep,
         setTourStep
       }}
