@@ -76,7 +76,7 @@ export const TransactionsView: React.FC = () => {
           </div>
           <h1 className="text-2xl font-extrabold text-white">Business Transactions</h1>
           <p className="text-xs text-slate-400 mt-1">
-            Real-time ledger categorized automatically by FinPass AI models.
+            Real-time ledger categorized automatically by FIN AI models.
           </p>
         </div>
 
@@ -271,7 +271,7 @@ export const TransactionsView: React.FC = () => {
               type="submit"
               className="w-full py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shadow-lg shadow-cyan-500/20 transition-all mt-2"
             >
-              Add & Calculate FinPass Impact
+              Add & Calculate FIN AI Impact
             </button>
           </form>
         </div>

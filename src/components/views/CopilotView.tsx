@@ -58,9 +58,9 @@ export const CopilotView: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between border-b border-slate-800 pb-3 flex-shrink-0">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold mb-1">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-semibold mb-1">
             <Bot className="w-3.5 h-3.5" />
-            <span>FinPass Copilot • AI Assistant</span>
+            <span>FIN AI Copilot • Autonomous Financial Assistant</span>
           </div>
           <h1 className="text-xl font-extrabold text-white">Financial Conversational Copilot</h1>
         </div>

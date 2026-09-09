@@ -20,9 +20,9 @@ interface TourStepDef {
 const tourSteps: TourStepDef[] = [
   {
     step: 1,
-    title: '1. Welcome to FinPass AI',
+    title: '1. Welcome to FIN AI',
     tab: 'dashboard',
-    description: 'Viewing RK Traders (Retail, Hyderabad) Live AI Dashboard.'
+    description: 'Viewing Live Autonomous Business Financial Intelligence Dashboard.'
   },
   {
     step: 2,
@@ -68,7 +68,7 @@ const tourSteps: TourStepDef[] = [
   },
   {
     step: 9,
-    title: '9. Open FinPass Copilot',
+    title: '9. Open FIN AI Copilot',
     tab: 'copilot',
     description: 'Ask financial questions via chat or simulated voice interaction.'
   },

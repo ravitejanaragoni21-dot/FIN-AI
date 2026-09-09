@@ -222,7 +222,7 @@ export const DashboardView: React.FC = () => {
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-semibold transition-colors"
           >
             <Bot className="w-3.5 h-3.5" />
-            Ask FinPass Copilot
+            Ask FIN AI Copilot
           </button>
           <button
             onClick={() => setActiveTab('credit')}

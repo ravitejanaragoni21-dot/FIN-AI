@@ -23,10 +23,10 @@ interface NavItem {
 
 export const navigationItems: NavItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'passport', label: 'FinPass Passport', icon: FileCheck2, highlight: true },
+  { id: 'passport', label: 'FIN AI Passport', icon: FileCheck2, highlight: true },
   { id: 'cashflow', label: 'Cash Flow', icon: TrendingUp },
   { id: 'payments', label: 'Invoices & Payments', icon: Receipt, badge: '3 Overdue' },
-  { id: 'copilot', label: 'FinPass Copilot', icon: Bot, badge: 'AI' },
+  { id: 'copilot', label: 'FIN AI Copilot', icon: Bot, badge: 'AI' },
   { id: 'risk', label: 'Risk Monitor', icon: AlertTriangle },
   { id: 'transactions', label: 'Transactions', icon: ReceiptText },
   { id: 'credit', label: 'Credit Readiness', icon: Award },

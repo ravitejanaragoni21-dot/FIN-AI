@@ -43,7 +43,7 @@ export const PassportView: React.FC = () => {
   const handleSharePassport = () => {
     if (navigator.share) {
       navigator.share({
-        title: `${businessProfile.name} - FinPass Business Financial Passport`,
+        title: `${businessProfile.name} - FIN AI Business Financial Passport`,
         text: `Verified Business Financial Passport for ${businessProfile.name} (Health Score: 84/100).`,
         url: window.location.href
       }).catch(() => {});
@@ -134,7 +134,7 @@ export const PassportView: React.FC = () => {
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-xl font-black tracking-widest text-white uppercase">
-                  FINPASS AI
+                  FIN AI
                 </span>
                 <span className="text-[10px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                   VERIFIED IDENTITY
@@ -266,7 +266,7 @@ export const PassportView: React.FC = () => {
         <div className="pt-4 border-t border-slate-800 flex items-start gap-2.5 text-[11px] text-slate-500 leading-normal">
           <AlertCircle className="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5" />
           <p>
-            <strong>FinPass AI Passport Disclaimer:</strong> This Business Financial Passport is presented as a verified digital financial summary and profile based on uploaded ledger transaction records. It does NOT constitute a guaranteed credit score or guaranteed loan approval by regulated banking institutions.
+            <strong>FIN AI Passport Disclaimer:</strong> This Business Financial Passport is presented as a verified digital financial summary and profile based on uploaded ledger transaction records. It does NOT constitute a guaranteed credit score or guaranteed loan approval by regulated banking institutions.
           </p>
         </div>
       </div>

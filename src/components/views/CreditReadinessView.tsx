@@ -14,7 +14,7 @@ import {
 import { useFinance } from '../../context/FinanceContext';
 
 export const CreditReadinessView: React.FC = () => {
-  const { healthBreakdown, creditFactors, setActiveTab, markInvoicePaid, invoices } = useFinance();
+  const { healthBreakdown, creditFactors, setActiveTab, markInvoicePaid, invoices, businessProfile } = useFinance();
   const [showWizard, setShowWizard] = useState<boolean>(false);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
 
@@ -63,7 +63,7 @@ export const CreditReadinessView: React.FC = () => {
           </div>
           <h1 className="text-2xl font-extrabold text-white">Credit Readiness Score</h1>
           <p className="text-xs text-slate-400 mt-1">
-            FinPass evaluation of RK Traders' credit eligibility for working capital financing.
+            FIN AI evaluation of {businessProfile.name || 'your business'} credit eligibility for working capital financing.
           </p>
         </div>
 
@@ -90,7 +90,7 @@ export const CreditReadinessView: React.FC = () => {
               <span className="text-base font-bold text-white">Good Credit Eligibility</span>
             </div>
             <p className="text-xs text-slate-300 mt-1 max-w-lg leading-relaxed">
-              RK Traders displays healthy cash surplus and a clean repayment record. Reaching <strong className="text-emerald-400">90+</strong> unlocks pre-approved collateral-free working capital lines up to ₹25 Lakhs.
+              {businessProfile.name || 'Your business'} displays healthy cash surplus and a clean repayment record. Reaching <strong className="text-emerald-400">90+</strong> unlocks pre-approved collateral-free working capital lines up to ₹25 Lakhs.
             </p>
           </div>
         </div>
