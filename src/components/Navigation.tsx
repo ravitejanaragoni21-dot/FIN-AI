@@ -35,7 +35,7 @@ export const navigationItems: NavItem[] = [
 ];
 
 export const DesktopSidebar: React.FC = () => {
-  const { activeTab, setActiveTab, riskAlerts } = useFinance();
+  const { activeTab, setActiveTab, riskAlerts, businessProfile } = useFinance();
   const activeRiskCount = riskAlerts.filter(r => !r.dismissed).length;
 
   return (
@@ -105,8 +105,8 @@ export const DesktopSidebar: React.FC = () => {
             Passport Verification
           </span>
         </div>
-        <p className="text-[11px] text-slate-400 mb-3">
-          RK Traders profile verified • 84 Health Score.
+        <p className="text-[11px] text-slate-400 mb-3 truncate">
+          {businessProfile.name ? `${businessProfile.name} • Verified` : 'No Profile Verified Yet'}
         </p>
         <button
           onClick={() => setActiveTab('passport')}

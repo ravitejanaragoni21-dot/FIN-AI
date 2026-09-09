@@ -45,6 +45,8 @@ export type ActiveTab =
   | 'risk';
 
 interface FinanceContextType {
+  hasAccount: boolean;
+  resetAccount: () => void;
   activeTab: ActiveTab;
   setActiveTab: (tab: ActiveTab) => void;
   businessProfile: BusinessProfile;
@@ -80,19 +82,92 @@ interface FinanceContextType {
 
 const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
 
+const emptyBusinessProfile: BusinessProfile = {
+  id: '',
+  name: '',
+  ownerName: '',
+  category: '',
+  location: '',
+  gstin: '',
+  establishedYear: 2024,
+  contactEmail: '',
+  contactPhone: '',
+  preferredLanguage: 'en'
+};
+
+const emptyMetrics: FinancialMetrics = {
+  monthlyRevenue: 0,
+  monthlyExpenses: 0,
+  netCashFlow: 0,
+  pendingPayments: 0,
+  existingMonthlyEmi: 0,
+  cashReserve: 0
+};
+
 export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [hasAccount, setHasAccount] = useState<boolean>(() => {
+    return !!localStorage.getItem('finpass_account');
+  });
+
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
-  const [businessProfile, setBusinessProfile] = useState<BusinessProfile>(initialBusinessProfile);
-  const [metrics, setMetrics] = useState<FinancialMetrics>(initialFinancialMetrics);
-  const [invoices, setInvoices] = useState<Invoice[]>(initialInvoices);
-  const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
+
+  const [businessProfile, setBusinessProfile] = useState<BusinessProfile>(() => {
+    const saved = localStorage.getItem('finpass_account');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to parse saved business profile', e);
+      }
+    }
+    return emptyBusinessProfile;
+  });
+
+  const [metrics, setMetrics] = useState<FinancialMetrics>(() => {
+    const saved = localStorage.getItem('finpass_metrics');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to parse saved metrics', e);
+      }
+    }
+    return emptyMetrics;
+  });
+
+  const [invoices, setInvoices] = useState<Invoice[]>(() => {
+    const saved = localStorage.getItem('finpass_invoices');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to parse saved invoices', e);
+      }
+    }
+    return initialInvoices;
+  });
+
+  const [transactions, setTransactions] = useState<Transaction[]>(() => {
+    const saved = localStorage.getItem('finpass_transactions');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to parse saved transactions', e);
+      }
+    }
+    return initialTransactions;
+  });
+
   const [riskAlerts, setRiskAlerts] = useState<RiskAlert[]>(initialRiskAlerts);
   
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState<boolean>(false);
   const [isBusinessModalOpen, setIsBusinessModalOpen] = useState<boolean>(false);
+  
   const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(() => {
-    return localStorage.getItem('finpass_onboarded') !== 'true';
+    return !localStorage.getItem('finpass_account');
   });
+
   const [tourStep, setTourStep] = useState<number | null>(null);
 
   const [copilotMessages, setCopilotMessages] = useState<CopilotMessage[]>([
@@ -227,13 +302,127 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const completeOnboarding = (profile: BusinessProfile, newMetrics: FinancialMetrics) => {
     setBusinessProfile(profile);
     setMetrics(newMetrics);
+    setHasAccount(true);
     setIsOnboardingOpen(false);
+
+    // Save to localStorage
+    localStorage.setItem('finpass_account', JSON.stringify(profile));
+    localStorage.setItem('finpass_metrics', JSON.stringify(newMetrics));
     localStorage.setItem('finpass_onboarded', 'true');
+
+    // Create tailored invoices proportional to pending payments
+    const pendingTotal = newMetrics.pendingPayments || 0;
+    const inv1 = Math.round(pendingTotal * 0.45);
+    const inv2 = Math.round(pendingTotal * 0.35);
+    const inv3 = Math.max(0, pendingTotal - inv1 - inv2);
+
+    const customInvoices: Invoice[] = [
+      {
+        id: `INV-${Math.floor(1000 + Math.random() * 9000)}`,
+        customerName: `${profile.name} Client A`,
+        customerPhone: '+91 98765 43210',
+        amount: inv1 > 0 ? inv1 : 25000,
+        dueDate: '2026-08-15',
+        status: inv1 > 0 ? 'Overdue' : 'Paid',
+        daysOverdue: inv1 > 0 ? 15 : 0,
+        itemsSummary: `${profile.category} Service / Supply Order`,
+        invoiceDate: '2026-07-15'
+      },
+      {
+        id: `INV-${Math.floor(1000 + Math.random() * 9000)}`,
+        customerName: `${profile.name} Wholesale Buyer`,
+        customerPhone: '+91 98480 99887',
+        amount: inv2 > 0 ? inv2 : 30000,
+        dueDate: '2026-08-20',
+        status: inv2 > 0 ? 'Overdue' : 'Paid',
+        daysOverdue: inv2 > 0 ? 10 : 0,
+        itemsSummary: `Bulk ${profile.category} Goods Delivery`,
+        invoiceDate: '2026-07-20'
+      },
+      {
+        id: `INV-${Math.floor(1000 + Math.random() * 9000)}`,
+        customerName: `Premier Enterprise`,
+        customerPhone: '+91 91212 33445',
+        amount: inv3 > 0 ? inv3 : 20000,
+        dueDate: '2026-09-15',
+        status: 'Pending',
+        daysOverdue: 0,
+        itemsSummary: `Recurring ${profile.category} Contract`,
+        invoiceDate: '2026-08-25'
+      }
+    ];
+    setInvoices(customInvoices);
+    localStorage.setItem('finpass_invoices', JSON.stringify(customInvoices));
+
+    // Create tailored transactions
+    const rev = newMetrics.monthlyRevenue || 100000;
+    const exp = newMetrics.monthlyExpenses || 50000;
+    const customTxns: Transaction[] = [
+      {
+        id: `TXN-${Math.floor(1000 + Math.random() * 9000)}`,
+        date: '2026-08-30',
+        description: `${profile.category} Sales Collection`,
+        party: 'Direct Commercial Sales',
+        amount: Math.round(rev * 0.2),
+        type: 'Credit',
+        category: 'Sales',
+        aiCategorized: true,
+        paymentMethod: 'UPI / Bank Transfer'
+      },
+      {
+        id: `TXN-${Math.floor(1000 + Math.random() * 9000)}`,
+        date: '2026-08-29',
+        description: `Operational Outflow & Facility Rent`,
+        party: `${profile.location} Commercial Space`,
+        amount: Math.round(exp * 0.25),
+        type: 'Debit',
+        category: 'Operating Expenses',
+        aiCategorized: true,
+        paymentMethod: 'Bank Transfer'
+      },
+      {
+        id: `TXN-${Math.floor(1000 + Math.random() * 9000)}`,
+        date: '2026-08-25',
+        description: `Inventory & Materials Procurement`,
+        party: 'Primary Supply Partner',
+        amount: Math.round(exp * 0.4),
+        type: 'Debit',
+        category: 'Purchases',
+        aiCategorized: true,
+        paymentMethod: 'NEFT'
+      }
+    ];
+    setTransactions(customTxns);
+    localStorage.setItem('finpass_transactions', JSON.stringify(customTxns));
+
+    // Set welcome message with their business and owner name
+    setCopilotMessages([
+      {
+        id: 'msg_welcome',
+        sender: 'assistant',
+        text: `Namaste${profile.ownerName ? ` ${profile.ownerName}` : ''}! Welcome to FinPass AI for ${profile.name}. Your Business Financial Passport is ready. You can ask me about cash flow trajectories, payment recovery strategies, or loan readiness.`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }
+    ]);
+  };
+
+  const resetAccount = () => {
+    localStorage.removeItem('finpass_account');
+    localStorage.removeItem('finpass_metrics');
+    localStorage.removeItem('finpass_invoices');
+    localStorage.removeItem('finpass_transactions');
+    localStorage.removeItem('finpass_onboarded');
+    setBusinessProfile(emptyBusinessProfile);
+    setMetrics(emptyMetrics);
+    setHasAccount(false);
+    setIsOnboardingOpen(true);
   };
 
   return (
     <FinanceContext.Provider
       value={{
+        hasAccount,
+        resetAccount,
         activeTab,
         setActiveTab,
         businessProfile,

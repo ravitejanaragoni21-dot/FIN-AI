@@ -17,6 +17,7 @@ import { AIInsightsView } from './components/views/AIInsightsView';
 import { RecommendationsView } from './components/views/RecommendationsView';
 
 // Modal Imports
+import { OnboardingWizard } from './components/modals/OnboardingWizard';
 import { BusinessDataModal } from './components/modals/BusinessDataModal';
 import { VoiceModal } from './components/modals/VoiceModal';
 
@@ -73,6 +74,7 @@ const MainContent: React.FC = () => {
       <MobileNavigation />
 
       {/* Global Modals */}
+      <OnboardingWizard />
       <BusinessDataModal />
       <VoiceModal />
     </div>

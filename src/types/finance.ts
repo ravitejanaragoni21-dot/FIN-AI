@@ -1,12 +1,14 @@
 export interface BusinessProfile {
   id: string;
   name: string;
+  ownerName?: string;
   category: string;
   location: string;
   gstin?: string;
   establishedYear?: number;
   contactEmail?: string;
   contactPhone?: string;
+  preferredLanguage?: 'en' | 'te' | 'hi';
 }
 
 export interface FinancialMetrics {
