@@ -11,7 +11,9 @@ import {
   AlertTriangle,
   UserPlus,
   RotateCcw,
-  User
+  User,
+  Link2,
+  QrCode
 } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 
@@ -23,7 +25,9 @@ export const Header: React.FC = () => {
     setIsBusinessModalOpen,
     setIsOnboardingOpen,
     resetAccount,
-    setActiveTab
+    setActiveTab,
+    setIsConnectUPIOpen,
+    connectedAccount
   } = useFinance();
 
   const [showNotifications, setShowNotifications] = useState(false);
@@ -100,6 +104,29 @@ export const Header: React.FC = () => {
 
         {/* Right Controls: New Account, Notifications, Data Customizer, Business Switcher */}
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* Connect UPI / Business Account Header Action Button */}
+          <button
+            onClick={() => setIsConnectUPIOpen(true)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-extrabold text-xs transition-all shadow-md ${
+              connectedAccount && connectedAccount.status === 'Connected'
+                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20'
+                : 'bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 shadow-cyan-500/20 animate-pulse'
+            }`}
+          >
+            {connectedAccount && connectedAccount.status === 'Connected' ? (
+              <>
+                <QrCode className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">🟢 UPI Connected</span>
+                <span className="sm:hidden">🟢 UPI</span>
+              </>
+            ) : (
+              <>
+                <Link2 className="w-3.5 h-3.5" />
+                <span>Connect Business UPI</span>
+              </>
+            )}
+          </button>
+
           {/* Create/Register Business Button if fresh */}
           {!hasAccount ? (
             <button

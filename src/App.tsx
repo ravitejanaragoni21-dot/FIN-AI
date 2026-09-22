@@ -20,6 +20,10 @@ import { RecommendationsView } from './components/views/RecommendationsView';
 import { OnboardingWizard } from './components/modals/OnboardingWizard';
 import { BusinessDataModal } from './components/modals/BusinessDataModal';
 import { VoiceModal } from './components/modals/VoiceModal';
+import { ConnectUPIModal } from './components/modals/ConnectUPIModal';
+import { DisconnectConfirmModal } from './components/modals/DisconnectConfirmModal';
+import { InsightWhyDrawer } from './components/modals/InsightWhyDrawer';
+import { FloatingExpensesBackground } from './components/FloatingExpensesBackground';
 
 const MainContent: React.FC = () => {
   const { activeTab } = useFinance();
@@ -52,7 +56,10 @@ const MainContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0B0F19] text-slate-100 flex flex-col font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
+    <div className="relative min-h-screen bg-[#0B0F19] text-slate-100 flex flex-col font-sans selection:bg-cyan-500/30 selection:text-cyan-200 overflow-x-hidden">
+      {/* Live Ambient Floating Expenses Background */}
+      <FloatingExpensesBackground />
+
       {/* Header Bar */}
       <Header />
 
@@ -60,7 +67,7 @@ const MainContent: React.FC = () => {
       <HackathonDemoTour />
 
       {/* Main Layout Container */}
-      <div className="flex-1 max-w-7xl w-full mx-auto flex">
+      <div className="relative z-10 flex-1 max-w-7xl w-full mx-auto flex">
         {/* Desktop Navigation Sidebar */}
         <DesktopSidebar />
 
@@ -77,6 +84,9 @@ const MainContent: React.FC = () => {
       <OnboardingWizard />
       <BusinessDataModal />
       <VoiceModal />
+      <ConnectUPIModal />
+      <DisconnectConfirmModal />
+      <InsightWhyDrawer />
     </div>
   );
 };

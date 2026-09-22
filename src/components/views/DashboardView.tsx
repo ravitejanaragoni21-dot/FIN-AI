@@ -10,9 +10,12 @@ import {
   FileCheck2,
   ChevronRight,
   Sparkles,
-  Award
+  Award,
+  Link2
 } from 'lucide-react';
 import { useFinance } from '../../context/FinanceContext';
+import { ConnectedAccountCard } from '../financialAccount/ConnectedAccountCard';
+import { AICFOSection } from '../financialAccount/AICFOSection';
 
 export const DashboardView: React.FC = () => {
   const {
@@ -20,7 +23,8 @@ export const DashboardView: React.FC = () => {
     metrics,
     healthBreakdown,
     riskAlerts,
-    setActiveTab
+    setActiveTab,
+    setIsConnectUPIOpen
   } = useFinance();
 
   const activeRisks = riskAlerts.filter(r => !r.dismissed);
@@ -109,6 +113,14 @@ export const DashboardView: React.FC = () => {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Business Financial Account Status Card */}
+      <ConnectedAccountCard />
+
+      {/* AI CFO Summary & Smart Alerts */}
+      <div className="p-5 rounded-3xl bg-slate-900/80 border border-slate-800 shadow-xl">
+        <AICFOSection />
       </div>
 
       {/* 4 Core Financial Metrics Grid */}
@@ -203,6 +215,13 @@ export const DashboardView: React.FC = () => {
           <span className="text-xs font-bold text-slate-200">Quick AI Actions:</span>
         </div>
         <div className="flex flex-wrap items-center gap-2 text-xs">
+          <button
+            onClick={() => setIsConnectUPIOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold shadow-md shadow-cyan-500/20 transition-all cursor-pointer"
+          >
+            <Link2 className="w-3.5 h-3.5" />
+            Connect Business UPI
+          </button>
           <button
             onClick={() => setActiveTab('passport')}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-semibold transition-colors"

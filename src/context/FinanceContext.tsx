@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useMemo } from 'react';
+import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
 import {
   BusinessProfile,
   FinancialMetrics,
@@ -12,6 +12,14 @@ import {
   CreditReadinessFactor,
   CopilotMessage
 } from '../types/finance';
+
+import {
+  ConnectedAccountInfo,
+  AccountProviderId,
+  FinancialAccountTransaction
+} from '../types/financialAccount';
+
+import { financialDataService } from '../services/financialData/financialDataService';
 
 import {
   initialBusinessProfile,
@@ -78,6 +86,21 @@ interface FinanceContextType {
   completeOnboarding: (profile: BusinessProfile, newMetrics: FinancialMetrics) => void;
   tourStep: number | null;
   setTourStep: (step: number | null) => void;
+
+  // Connected UPI / Financial Account Module Additions
+  connectedAccount: ConnectedAccountInfo | null;
+  isConnectUPIOpen: boolean;
+  setIsConnectUPIOpen: (open: boolean) => void;
+  isDisconnectModalOpen: boolean;
+  setIsDisconnectModalOpen: (open: boolean) => void;
+  isSyncing: boolean;
+  syncStage: string | null;
+  syncToast: string | null;
+  whyDrawerKey: string | null;
+  setWhyDrawerKey: (key: string | null) => void;
+  connectUPIAccount: (providerId: AccountProviderId) => Promise<{ account: ConnectedAccountInfo; transactions: FinancialAccountTransaction[] } | null>;
+  syncUPIAccount: () => Promise<void>;
+  disconnectUPIAccount: (retainData?: boolean) => Promise<void>;
 }
 
 const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
@@ -170,6 +193,15 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const [tourStep, setTourStep] = useState<number | null>(null);
 
+  // UPI Account Connection States
+  const [connectedAccount, setConnectedAccount] = useState<ConnectedAccountInfo | null>(null);
+  const [isConnectUPIOpen, setIsConnectUPIOpen] = useState<boolean>(false);
+  const [isDisconnectModalOpen, setIsDisconnectModalOpen] = useState<boolean>(false);
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [syncStage, setSyncStage] = useState<string | null>(null);
+  const [syncToast, setSyncToast] = useState<string | null>(null);
+  const [whyDrawerKey, setWhyDrawerKey] = useState<string | null>(null);
+
   const [copilotMessages, setCopilotMessages] = useState<CopilotMessage[]>([
     {
       id: 'msg_welcome',
@@ -178,6 +210,15 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       timestamp: '10:00 AM'
     }
   ]);
+
+  // Load initial connected account from Firestore/cache on mount
+  useEffect(() => {
+    financialDataService.getConnectedAccount().then(acc => {
+      if (acc) {
+        setConnectedAccount(acc);
+      }
+    });
+  }, []);
 
   // Recalculate AI financial health dynamically when metrics change
   const healthBreakdown = useMemo(() => {
@@ -199,6 +240,141 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setRiskAlerts(prev => prev.map(a => a.id === id ? { ...a, dismissed: true } : a));
   };
 
+  // Helper: map imported demo transactions to standard UI transactions
+  const mapDemoTxnsToUi = (demoTxns: FinancialAccountTransaction[]): Transaction[] => {
+    return demoTxns.map(dt => ({
+      id: dt.transactionId,
+      date: dt.date,
+      description: `${dt.description} [DEMO UPI]`,
+      party: dt.description.split(' - ')[1] || 'UPI Merchant',
+      amount: dt.amount,
+      type: dt.type === 'CREDIT' ? 'Credit' : 'Debit',
+      category: dt.category === 'Customer Payment' || dt.category === 'Sales' ? 'Sales' : 'Operating Expenses',
+      aiCategorized: true,
+      paymentMethod: dt.paymentChannel || 'UPI / Bank Transfer'
+    }));
+  };
+
+  // Connect UPI / Business Account
+  const connectUPIAccount = async (providerId: AccountProviderId) => {
+    try {
+      const { account, transactions: importedDemoTxns } = await financialDataService.connect({
+        providerId,
+        accountHolderName: businessProfile.name || 'Demo Enterprise',
+        businessGstin: businessProfile.gstin
+      });
+
+      setConnectedAccount(account);
+
+      // Merge imported transactions into active transactions list
+      const uiTxns = mapDemoTxnsToUi(importedDemoTxns);
+
+      setTransactions(prev => {
+        const existingIds = new Set(prev.map(t => t.id));
+        const newOnly = uiTxns.filter(t => !existingIds.has(t.id));
+        const merged = [...newOnly, ...prev];
+        localStorage.setItem('finpass_transactions', JSON.stringify(merged));
+        return merged;
+      });
+
+      // Automatically recalculate revenue/expenses metrics with imported data
+      const totalCredit = importedDemoTxns.filter(t => t.type === 'CREDIT').reduce((acc, t) => acc + t.amount, 0);
+      const totalDebit = importedDemoTxns.filter(t => t.type === 'DEBIT').reduce((acc, t) => acc + t.amount, 0);
+
+      setMetrics(prev => {
+        const updated = {
+          ...prev,
+          monthlyRevenue: Math.max(prev.monthlyRevenue, totalCredit),
+          monthlyExpenses: Math.max(prev.monthlyExpenses, totalDebit),
+          netCashFlow: totalCredit - totalDebit
+        };
+        localStorage.setItem('finpass_metrics', JSON.stringify(updated));
+        return updated;
+      });
+
+      return { account, transactions: importedDemoTxns };
+    } catch (e) {
+      console.error('Failed to connect UPI account', e);
+      return null;
+    }
+  };
+
+  // Trigger Transaction Sync
+  const syncUPIAccount = async () => {
+    if (!connectedAccount) return;
+
+    setIsSyncing(true);
+    setSyncStage('Connecting');
+    setSyncToast(null);
+
+    // Simulate multi-stage sync pipeline
+    setTimeout(() => setSyncStage('Fetching'), 600);
+    setTimeout(() => setSyncStage('Processing'), 1200);
+    setTimeout(() => setSyncStage('AI Analysis'), 1800);
+    setTimeout(() => setSyncStage('Updated'), 2400);
+
+    try {
+      const result = await financialDataService.syncTransactions(connectedAccount.accountId);
+
+      if (result.success && result.newTransactions.length > 0) {
+        const uiTxns = mapDemoTxnsToUi(result.newTransactions);
+
+        setTransactions(prev => {
+          const existingIds = new Set(prev.map(t => t.id));
+          const newOnly = uiTxns.filter(t => !existingIds.has(t.id));
+          const merged = [...newOnly, ...prev];
+          localStorage.setItem('finpass_transactions', JSON.stringify(merged));
+          return merged;
+        });
+
+        const nowIso = new Date().toISOString();
+        setConnectedAccount(prev => prev ? {
+          ...prev,
+          lastSyncedAt: nowIso,
+          totalTransactionsCount: prev.totalTransactionsCount + result.newTransactionsCount
+        } : null);
+
+        setSyncToast(`✓ Financial Passport Updated — ${result.newTransactionsCount} new transactions imported.`);
+      } else {
+        setSyncToast('✓ Financial Passport Updated — Ledger is up to date.');
+      }
+    } catch (e) {
+      console.error('Sync failed', e);
+      setSyncToast('Sync encountered an error.');
+    } finally {
+      setTimeout(() => {
+        setIsSyncing(false);
+        setSyncStage(null);
+      }, 2800);
+      setTimeout(() => {
+        setSyncToast(null);
+      }, 7000);
+    }
+  };
+
+  // Disconnect UPI Account
+  const disconnectUPIAccount = async (retainData: boolean = true) => {
+    if (!connectedAccount) return;
+
+    await financialDataService.disconnect(connectedAccount.accountId, retainData);
+
+    setConnectedAccount(prev => prev ? { ...prev, status: 'Disconnected' } : null);
+
+    if (!retainData) {
+      // Filter out demo transactions
+      setTransactions(prev => {
+        const filtered = prev.filter(t => !t.description.includes('[DEMO UPI]'));
+        localStorage.setItem('finpass_transactions', JSON.stringify(filtered));
+        return filtered;
+      });
+    }
+
+    setSyncToast('Account disconnected successfully.');
+    setTimeout(() => {
+      setSyncToast(null);
+    }, 4000);
+  };
+
   // Mark invoice as paid and automatically adjust metrics
   const markInvoicePaid = (id: string) => {
     setInvoices(prev =>
@@ -213,14 +389,12 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     const invToPay = invoices.find(i => i.id === id);
     if (invToPay && invToPay.status !== 'Paid') {
-      // Update pending payments and cash reserve
       setMetrics(prev => ({
         ...prev,
         pendingPayments: Math.max(0, prev.pendingPayments - invToPay.amount),
         cashReserve: prev.cashReserve + invToPay.amount
       }));
 
-      // Add corresponding transaction entry
       const newTxn: Transaction = {
         id: `TXN-${Math.floor(1000 + Math.random() * 9000)}`,
         date: new Date().toISOString().split('T')[0],
@@ -247,7 +421,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     setTransactions(prev => [createdTxn, ...prev]);
 
-    // Recalculate metrics dynamically based on transaction type
     if (newTxn.type === 'Credit') {
       setMetrics(prev => ({
         ...prev,
@@ -298,19 +471,17 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-
   const completeOnboarding = (profile: BusinessProfile, newMetrics: FinancialMetrics) => {
     setBusinessProfile(profile);
     setMetrics(newMetrics);
     setHasAccount(true);
     setIsOnboardingOpen(false);
 
-    // Save to localStorage
     localStorage.setItem('finpass_account', JSON.stringify(profile));
     localStorage.setItem('finpass_metrics', JSON.stringify(newMetrics));
     localStorage.setItem('finpass_onboarded', 'true');
 
-    // Create tailored invoices proportional to pending payments
+    // Create custom invoices proportional to pending payments
     const pendingTotal = newMetrics.pendingPayments || 0;
     const inv1 = Math.round(pendingTotal * 0.45);
     const inv2 = Math.round(pendingTotal * 0.35);
@@ -354,56 +525,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setInvoices(customInvoices);
     localStorage.setItem('finpass_invoices', JSON.stringify(customInvoices));
 
-    // Create tailored transactions
-    const rev = newMetrics.monthlyRevenue || 100000;
-    const exp = newMetrics.monthlyExpenses || 50000;
-    const customTxns: Transaction[] = [
-      {
-        id: `TXN-${Math.floor(1000 + Math.random() * 9000)}`,
-        date: '2026-08-30',
-        description: `${profile.category} Sales Collection`,
-        party: 'Direct Commercial Sales',
-        amount: Math.round(rev * 0.2),
-        type: 'Credit',
-        category: 'Sales',
-        aiCategorized: true,
-        paymentMethod: 'UPI / Bank Transfer'
-      },
-      {
-        id: `TXN-${Math.floor(1000 + Math.random() * 9000)}`,
-        date: '2026-08-29',
-        description: `Operational Outflow & Facility Rent`,
-        party: `${profile.location} Commercial Space`,
-        amount: Math.round(exp * 0.25),
-        type: 'Debit',
-        category: 'Operating Expenses',
-        aiCategorized: true,
-        paymentMethod: 'Bank Transfer'
-      },
-      {
-        id: `TXN-${Math.floor(1000 + Math.random() * 9000)}`,
-        date: '2026-08-25',
-        description: `Inventory & Materials Procurement`,
-        party: 'Primary Supply Partner',
-        amount: Math.round(exp * 0.4),
-        type: 'Debit',
-        category: 'Purchases',
-        aiCategorized: true,
-        paymentMethod: 'NEFT'
-      }
-    ];
-    setTransactions(customTxns);
-    localStorage.setItem('finpass_transactions', JSON.stringify(customTxns));
-
-    // Set welcome message with their business and owner name
-    setCopilotMessages([
-      {
-        id: 'msg_welcome',
-        sender: 'assistant',
-        text: `Namaste${profile.ownerName ? ` ${profile.ownerName}` : ''}! Welcome to FinPass AI for ${profile.name}. Your Business Financial Passport is ready. You can ask me about cash flow trajectories, payment recovery strategies, or loan readiness.`,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      }
-    ]);
+    // Prompt user to connect UPI for auto transaction stream
+    setIsConnectUPIOpen(true);
   };
 
   const resetAccount = () => {
@@ -415,6 +538,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setBusinessProfile(emptyBusinessProfile);
     setMetrics(emptyMetrics);
     setHasAccount(false);
+    setConnectedAccount(null);
     setIsOnboardingOpen(true);
   };
 
@@ -453,7 +577,22 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setIsOnboardingOpen,
         completeOnboarding,
         tourStep,
-        setTourStep
+        setTourStep,
+
+        // UPI Module values
+        connectedAccount,
+        isConnectUPIOpen,
+        setIsConnectUPIOpen,
+        isDisconnectModalOpen,
+        setIsDisconnectModalOpen,
+        isSyncing,
+        syncStage,
+        syncToast,
+        whyDrawerKey,
+        setWhyDrawerKey,
+        connectUPIAccount,
+        syncUPIAccount,
+        disconnectUPIAccount
       }}
     >
       {children}

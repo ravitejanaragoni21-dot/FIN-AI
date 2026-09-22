@@ -9,13 +9,24 @@ import {
   ArrowDownRight,
   CheckCircle2,
   Calendar,
-  X
+  X,
+  RefreshCw,
+  Link2,
+  QrCode,
+  ShieldCheck
 } from 'lucide-react';
 import { useFinance } from '../../context/FinanceContext';
 import { TransactionCategory } from '../../types/finance';
 
 export const TransactionsView: React.FC = () => {
-  const { transactions, addTransaction } = useFinance();
+  const {
+    transactions,
+    addTransaction,
+    connectedAccount,
+    syncUPIAccount,
+    isSyncing,
+    setIsConnectUPIOpen
+  } = useFinance();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -80,12 +91,33 @@ export const TransactionsView: React.FC = () => {
           </p>
         </div>
 
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shadow-lg shadow-cyan-500/20 transition-all flex items-center gap-1.5"
-        >
-          <Plus className="w-4 h-4" /> Add Transaction
-        </button>
+        <div className="flex items-center gap-2">
+          {connectedAccount && connectedAccount.status === 'Connected' ? (
+            <button
+              onClick={() => syncUPIAccount()}
+              disabled={isSyncing}
+              className="px-3.5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-cyan-500/20 transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+              <span>{isSyncing ? 'Syncing...' : '🔄 Sync Transactions'}</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => setIsConnectUPIOpen(true)}
+              className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-extrabold text-xs shadow-lg shadow-cyan-500/20 transition-all flex items-center gap-1.5 cursor-pointer animate-pulse"
+            >
+              <Link2 className="w-3.5 h-3.5" />
+              <span>🔗 Connect Business UPI</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs border border-slate-700 transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            <Plus className="w-4 h-4" /> Add Transaction
+          </button>
+        </div>
       </div>
 
       {/* Filters & Search Row */}
